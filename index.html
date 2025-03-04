@@ -1,384 +1,458 @@
-<!-- voter.html (Client Voting Page) -->
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uk">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rada Voting Client</title>
+    <title>Пульт голосування - Верховна Рада України</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            max-width: 500px;
-            margin: 0 auto;
-            padding: 20px;
-            text-align: center;
             background-color: #f5f5f5;
-        }
-        .login-section, .voting-section {
-            margin: 20px 0;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            margin: 0;
             padding: 20px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            background-color: white;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
-        .voting-section {
+
+        .header {
+            background-color: #1a5276;
+            color: white;
+            width: 100%;
+            text-align: center;
+            padding: 15px 0;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+
+        .login-container, .voting-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            width: 90%;
+            max-width: 400px;
+            margin-bottom: 20px;
+        }
+
+        .voting-container {
             display: none;
         }
-        .vote-buttons {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 20px;
+
+        h2 {
+            color: #2c3e50;
+            margin-top: 0;
         }
-        .vote-button {
-            flex: 1;
-            margin: 0 10px;
-            padding: 20px 15px;
-            font-size: 18px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: all 0.3s;
+
+        .form-group {
+            margin-bottom: 15px;
         }
-        .vote-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #34495e;
         }
-        .vote-button:active {
-            transform: translateY(1px);
-        }
-        .for { background-color: #4CAF50; color: white; }
-        .against { background-color: #F44336; color: white; }
-        .abstain { background-color: #FFEB3B; }
-        input, button {
+
+        input {
+            width: 100%;
             padding: 10px;
-            margin: 5px;
-            font-size: 16px;
+            border: 1px solid #ddd;
             border-radius: 4px;
-            border: 1px solid #ccc;
+            font-size: 16px;
+            box-sizing: border-box;
         }
+
         button {
-            background-color: #2196F3;
+            width: 100%;
+            padding: 12px;
+            background-color: #2980b9;
             color: white;
             border: none;
+            border-radius: 4px;
+            font-size: 16px;
             cursor: pointer;
             transition: background-color 0.3s;
         }
+
         button:hover {
-            background-color: #0b7dda;
+            background-color: #3498db;
         }
-        #status {
+
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+
+        .vote-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
             margin-top: 20px;
-            font-weight: bold;
+        }
+
+        .vote-for {
+            background-color: #27ae60;
+        }
+
+        .vote-for:hover {
+            background-color: #2ecc71;
+        }
+
+        .vote-against {
+            background-color: #c0392b;
+        }
+
+        .vote-against:hover {
+            background-color: #e74c3c;
+        }
+
+        .vote-abstain {
+            background-color: #f39c12;
+        }
+
+        .vote-abstain:hover {
+            background-color: #f1c40f;
+        }
+
+        .status {
+            margin-top: 20px;
             padding: 10px;
             border-radius: 4px;
-            background-color: #f0f0f0;
-        }
-        #votingTitle {
-            font-size: 24px;
-            margin-bottom: 20px;
+            text-align: center;
             font-weight: bold;
         }
-        #voteNumber {
-            font-size: 18px;
-            color: #ff9800;
-            margin-bottom: 15px;
+
+        .status-waiting {
+            background-color: #eaeded;
+            color: #7f8c8d;
         }
-        .voted-indicator {
+
+        .status-active {
+            background-color: #d5f5e3;
+            color: #27ae60;
+        }
+
+        .status-voted {
+            background-color: #ebf5fb;
+            color: #2980b9;
+        }
+
+        .status-ended {
+            background-color: #fadbd8;
+            color: #c0392b;
+        }
+
+        .vote-info {
             margin-top: 15px;
             padding: 10px;
+            background-color: #f8f9f9;
             border-radius: 4px;
-            font-weight: bold;
         }
-        .voted-for { background-color: rgba(76, 175, 80, 0.2); }
-        .voted-against { background-color: rgba(244, 67, 54, 0.2); }
-        .voted-abstain { background-color: rgba(255, 235, 59, 0.2); }
+
+        .timer {
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            margin: 15px 0;
+            color: #e74c3c;
+        }
     </style>
 </head>
 <body>
-    <h1>Rada Voting Client</h1>
-    
-    <div class="login-section" id="loginSection">
-        <h2>Join Voting Session</h2>
-        <div>
-            <label for="sessionCode">Session Code:</label>
-            <input type="text" id="sessionCode" placeholder="Enter session code">
-        </div>
-        <div>
-            <label for="voterName">Your Name:</label>
-            <input type="text" id="voterName" placeholder="Enter your name">
-        </div>
-        <button id="joinSession">Join Session</button>
-        <div id="loginStatus"></div>
+    <div class="header">
+        <h1>Пульт голосування</h1>
     </div>
-    
-    <div class="voting-section" id="votingSection">
-        <h2>Voting Panel</h2>
-        <div id="voteNumber">Vote № 0</div>
-        <div id="votingTitle">Waiting for voting to start...</div>
+
+    <div class="login-container" id="login-container">
+        <h2>Вхід у систему голосування</h2>
+        <div class="form-group">
+            <label for="session-code">Код сесії:</label>
+            <input type="text" id="session-code" placeholder="Введіть код сесії" maxlength="6">
+        </div>
+        <div class="form-group">
+            <label for="participant-name">Ваше ім'я:</label>
+            <input type="text" id="participant-name" placeholder="Введіть ваше ім'я">
+        </div>
+        <button id="join-button">Приєднатися до голосування</button>
+    </div>
+
+    <div class="voting-container" id="voting-container">
+        <h2>Голосування № <span id="vote-number">-</span></h2>
+        
+        <div class="vote-info" id="vote-info">
+            Очікування початку голосування...
+        </div>
+        
+        <div class="timer" id="timer">00:00</div>
         
         <div class="vote-buttons">
-            <button class="vote-button for" id="voteFor">ЗА</button>
-            <button class="vote-button against" id="voteAgainst">ПРОТИ</button>
-            <button class="vote-button abstain" id="voteAbstain">УТРИМАЛИСЬ</button>
+            <button class="vote-for" id="vote-for-button" disabled>ЗА</button>
+            <button class="vote-against" id="vote-against-button" disabled>ПРОТИ</button>
+            <button class="vote-abstain" id="vote-abstain-button" disabled>УТРИМАВСЯ</button>
         </div>
         
-        <div id="votedIndicator" class="voted-indicator" style="display: none;">
-            You voted: <span id="votedChoice"></span>
+        <div class="status status-waiting" id="vote-status">
+            Очікування початку голосування
         </div>
         
-        <div id="status">Not connected</div>
-        <button id="leaveSession">Leave Session</button>
+        <button id="logout-button" style="margin-top: 20px;">Вийти</button>
     </div>
-    
-    <!-- Firebase App (the core Firebase SDK) -->
+
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <!-- Firebase Realtime Database -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
     <script>
         // Firebase configuration
         const firebaseConfig = {
-            apiKey: "AIzaSyDxKbwT-KIxKD9jbKL-67dwGsBQCvgbaQQ",
+            apiKey: "AIzaSyBXH7JgXl7z8hWaV0xOIFcTt_rXeQF9T8c",
             authDomain: "rada-voting-system.firebaseapp.com",
             databaseURL: "https://rada-voting-system-default-rtdb.firebaseio.com",
             projectId: "rada-voting-system",
             storageBucket: "rada-voting-system.appspot.com",
-            messagingSenderId: "1098040621778",
-            appId: "1:1098040621778:web:b9e5c9e7d7f5c9e7d7f5c9"
+            messagingSenderId: "123456789012",
+            appId: "1:123456789012:web:abcdef1234567890abcdef"
         };
-        
+
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
-        
-        // Variables
-        let voterId = null;
-        let sessionCode = null;
-        let voterName = null;
-        let sessionRef = null;
-        let voterRef = null;
-        let connected = false;
-        
+
+        // Global variables
+        let sessionCode = '';
+        let participantId = '';
+        let participantName = '';
+        let timerInterval;
+        let remainingTime = 0;
+        let hasVoted = false;
+
         // DOM elements
-        const loginSection = document.getElementById('loginSection');
-        const votingSection = document.getElementById('votingSection');
-        const sessionCodeInput = document.getElementById('sessionCode');
-        const voterNameInput = document.getElementById('voterName');
-        const joinButton = document.getElementById('joinSession');
-        const leaveButton = document.getElementById('leaveSession');
-        const statusDisplay = document.getElementById('status');
-        const votingTitleDisplay = document.getElementById('votingTitle');
-        const voteNumberDisplay = document.getElementById('voteNumber');
-        const loginStatusDisplay = document.getElementById('loginStatus');
-        const votedIndicator = document.getElementById('votedIndicator');
-        const votedChoice = document.getElementById('votedChoice');
-        
-        // Vote buttons
-        const voteForButton = document.getElementById('voteFor');
-        const voteAgainstButton = document.getElementById('voteAgainst');
-        const voteAbstainButton = document.getElementById('voteAbstain');
-        
-        // Check URL for session code
-        function checkUrlForSession() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const sessionFromUrl = urlParams.get('session');
-            if (sessionFromUrl) {
-                sessionCodeInput.value = sessionFromUrl;
-            }
-        }
-        
-        // Join session
-        joinButton.addEventListener('click', function() {
-            sessionCode = sessionCodeInput.value.trim().toUpperCase();
-            voterName = voterNameInput.value.trim();
+        const loginContainerEl = document.getElementById('login-container');
+        const votingContainerEl = document.getElementById('voting-container');
+        const sessionCodeInputEl = document.getElementById('session-code');
+        const participantNameInputEl = document.getElementById('participant-name');
+        const joinButtonEl = document.getElementById('join-button');
+        const voteNumberEl = document.getElementById('vote-number');
+        const voteInfoEl = document.getElementById('vote-info');
+        const timerEl = document.getElementById('timer');
+        const voteForButtonEl = document.getElementById('vote-for-button');
+        const voteAgainstButtonEl = document.getElementById('vote-against-button');
+        const voteAbstainButtonEl = document.getElementById('vote-abstain-button');
+        const voteStatusEl = document.getElementById('vote-status');
+        const logoutButtonEl = document.getElementById('logout-button');
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set up button event listeners
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // Join button
+            joinButtonEl.addEventListener('click', joinSession);
             
-            if (!sessionCode || !voterName) {
-                loginStatusDisplay.textContent = 'Please enter both session code and your name';
+            // Vote buttons
+            voteForButtonEl.addEventListener('click', () => castVote('for'));
+            voteAgainstButtonEl.addEventListener('click', () => castVote('against'));
+            voteAbstainButtonEl.addEventListener('click', () => castVote('abstained'));
+            
+            // Logout button
+            logoutButtonEl.addEventListener('click', logout);
+        }
+
+        function joinSession() {
+            sessionCode = sessionCodeInputEl.value.trim().toUpperCase();
+            participantName = participantNameInputEl.value.trim();
+            
+            if (!sessionCode || !participantName) {
+                alert('Будь ласка, введіть код сесії та ваше ім\'я');
                 return;
             }
             
-            loginStatusDisplay.textContent = 'Connecting...';
-            
             // Check if session exists
-            database.ref('sessions/' + sessionCode).once('value', (snapshot) => {
-                if (!snapshot.exists()) {
-                    loginStatusDisplay.textContent = 'Session not found. Please check the code.';
+            database.ref(`sessions/${sessionCode}`).once('value', (snapshot) => {
+                const sessionData = snapshot.val();
+                
+                if (!sessionData) {
+                    alert('Сесія з таким кодом не знайдена');
                     return;
                 }
                 
-                // Session exists, join it
-                sessionRef = database.ref('sessions/' + sessionCode);
+                // Generate participant ID
+                participantId = generateParticipantId();
                 
-                // Create voter
-                voterId = database.ref('sessions/' + sessionCode + '/voters').push().key;
-                voterRef = sessionRef.child('voters').child(voterId);
-                
-                voterRef.set({
-                    name: voterName,
-                    joinedAt: firebase.database.ServerValue.TIMESTAMP
+                // Register participant
+                database.ref(`sessions/${sessionCode}/participants/${participantId}`).set({
+                    name: participantName,
+                    joinTime: firebase.database.ServerValue.TIMESTAMP,
+                    status: 'не голосував'
                 }).then(() => {
-                    connected = true;
+                    // Switch to voting view
+                    loginContainerEl.style.display = 'none';
+                    votingContainerEl.style.display = 'block';
                     
-                    // Switch to voting section
-                    loginSection.style.display = 'none';
-                    votingSection.style.display = 'block';
-                    statusDisplay.textContent = 'Connected. Waiting for voting to start...';
-                    
-                    // Listen for session changes
+                    // Set up session listeners
                     setupSessionListeners();
-                }).catch(error => {
-                    loginStatusDisplay.textContent = 'Error joining session: ' + error.message;
+                }).catch((error) => {
+                    alert(`Помилка приєднання до сесії: ${error.message}`);
                 });
             });
-        });
-        
-        // Setup session listeners
+        }
+
         function setupSessionListeners() {
-            // Listen for voting status
-            sessionRef.child('active').on('value', (snapshot) => {
-                const isActive = snapshot.val() || false;
+            // Listen for session changes
+            database.ref(`sessions/${sessionCode}`).on('value', (snapshot) => {
+                const sessionData = snapshot.val();
                 
-                if (isActive) {
-                    statusDisplay.textContent = 'Voting is active. Please vote!';
-                    enableVoteButtons();
-                } else {
-                    statusDisplay.textContent = 'Waiting for voting to start...';
-                    disableVoteButtons();
+                if (!sessionData) {
+                    alert('Сесія була закрита');
+                    logout();
+                    return;
                 }
-            });
-            
-            // Listen for voting title
-            sessionRef.child('votingTitle').on('value', (snapshot) => {
-                const title = snapshot.val() || 'Waiting for voting to start...';
-                votingTitleDisplay.textContent = title;
-            });
-            
-            // Listen for vote number
-            sessionRef.child('voteNumber').on('value', (snapshot) => {
-                const number = snapshot.val() || '0';
-                voteNumberDisplay.textContent = 'Vote № ' + number;
-            });
-            
-            // Listen for voter's own vote
-            voterRef.child('vote').on('value', (snapshot) => {
-                const vote = snapshot.val();
                 
-                if (vote) {
-                    votedIndicator.style.display = 'block';
-                    votedChoice.textContent = vote.toUpperCase();
-                    
-                    votedIndicator.className = 'voted-indicator';
-                    if (vote === 'for') {
-                        votedIndicator.classList.add('voted-for');
-                    } else if (vote === 'against') {
-                        votedIndicator.classList.add('voted-against');
-                    } else if (vote === 'abstain') {
-                        votedIndicator.classList.add('voted-abstain');
-                    }
-                } else {
-                    votedIndicator.style.display = 'none';
-                }
-            });
-            
-            // Listen for session decision
-            sessionRef.child('decision').on('value', (snapshot) => {
-                const decision = snapshot.val();
-                if (decision) {
-                    statusDisplay.textContent = 'Voting ended. Result: ' + decision;
-                }
+                updateVotingUI(sessionData);
             });
         }
-        
-        // Leave session
-        leaveButton.addEventListener('click', function() {
-            if (voterRef) {
-                voterRef.remove();
+
+        function updateVotingUI(sessionData) {
+            // Update vote number
+            voteNumberEl.textContent = sessionData.voteNumber || '-';
+            
+            // Update vote info
+            voteInfoEl.textContent = sessionData.voteTitle || 'Очікування початку голосування...';
+            
+            // Check if voting is active
+            if (sessionData.active) {
+                // Enable vote buttons if not voted yet
+                const participantData = sessionData.participants?.[participantId];
+                hasVoted = participantData?.status !== 'не голосував';
+                
+                voteForButtonEl.disabled = hasVoted;
+                voteAgainstButtonEl.disabled = hasVoted;
+                voteAbstainButtonEl.disabled = hasVoted;
+                
+                // Update status
+                if (hasVoted) {
+                    voteStatusEl.textContent = `Ви проголосували: ${getVoteStatusText(participantData.status)}`;
+                    voteStatusEl.className = 'status status-voted';
+                } else {
+                    voteStatusEl.textContent = 'Голосування активне - зробіть свій вибір';
+                    voteStatusEl.className = 'status status-active';
+                }
+                
+                // Start timer if not already running
+                if (!timerInterval && sessionData.startTime && sessionData.voteTime) {
+                    const elapsedSeconds = Math.floor((Date.now() - sessionData.startTime) / 1000);
+                    remainingTime = Math.max(0, sessionData.voteTime - elapsedSeconds);
+                    startTimer();
+                }
+            } else {
+                // Disable vote buttons
+                voteForButtonEl.disabled = true;
+                voteAgainstButtonEl.disabled = true;
+                voteAbstainButtonEl.disabled = true;
+                
+                // Stop timer if running
+                if (timerInterval) {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                }
+                
+                // Update status
+                if (sessionData.decision) {
+                    voteStatusEl.textContent = `Голосування завершено: ${sessionData.decision}`;
+                    voteStatusEl.className = 'status status-ended';
+                } else {
+                    voteStatusEl.textContent = 'Очікування початку голосування';
+                    voteStatusEl.className = 'status status-waiting';
+                }
+            }
+        }
+
+                function castVote(voteType) {
+            if (hasVoted) return;
+            
+            // Update participant status
+            database.ref(`sessions/${sessionCode}/participants/${participantId}`).update({
+                status: voteType
+            });
+            
+            // Record vote
+            database.ref(`sessions/${sessionCode}/votes/${participantId}`).set(voteType);
+            
+            // Update UI
+            hasVoted = true;
+            voteForButtonEl.disabled = true;
+            voteAgainstButtonEl.disabled = true;
+            voteAbstainButtonEl.disabled = true;
+            
+            voteStatusEl.textContent = `Ви проголосували: ${getVoteStatusText(voteType)}`;
+            voteStatusEl.className = 'status status-voted';
+        }
+
+        function getVoteStatusText(voteType) {
+            switch(voteType) {
+                case 'for': return 'ЗА';
+                case 'against': return 'ПРОТИ';
+                case 'abstained': return 'УТРИМАВСЯ';
+                default: return 'не голосував';
+            }
+        }
+
+        function startTimer() {
+            updateTimerDisplay();
+            
+            timerInterval = setInterval(() => {
+                remainingTime--;
+                updateTimerDisplay();
+                
+                if (remainingTime <= 0) {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(remainingTime / 60);
+            const seconds = remainingTime % 60;
+            timerEl.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        function logout() {
+            // Remove participant from session
+            if (sessionCode && participantId) {
+                database.ref(`sessions/${sessionCode}/participants/${participantId}`).remove();
             }
             
-            if (sessionRef) {
-                sessionRef.off(); // Remove all listeners
+            // Clear session data
+            sessionCode = '';
+            participantId = '';
+            participantName = '';
+            
+            // Stop timer if running
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
             }
             
-            connected = false;
-            voterId = null;
-            sessionCode = null;
+            // Switch back to login view
+            loginContainerEl.style.display = 'block';
+            votingContainerEl.style.display = 'none';
             
-            loginSection.style.display = 'block';
-            votingSection.style.display = 'none';
-            votedIndicator.style.display = 'none';
-            loginStatusDisplay.textContent = '';
-        });
-        
-        // Vote handlers
-        voteForButton.addEventListener('click', function() {
-            if (!connected) return;
-            sendVote('for');
-        });
-        
-        voteAgainstButton.addEventListener('click', function() {
-            if (!connected) return;
-            sendVote('against');
-        });
-        
-        voteAbstainButton.addEventListener('click', function() {
-            if (!connected) return;
-            sendVote('abstain');
-        });
-        
-        // Send vote function
-        function sendVote(voteType) {
-            if (!voterRef) return;
-            
-            // Get current vote
-            voterRef.child('vote').once('value', (snapshot) => {
-                const currentVote = snapshot.val();
-                
-                // Update votes counter
-                sessionRef.child('votes').transaction((votes) => {
-                    votes = votes || { for: 0, against: 0, abstain: 0 };
-                    
-                    // Remove previous vote if exists
-                    if (currentVote) {
-                        votes[currentVote] = (votes[currentVote] || 0) - 1;
-                        if (votes[currentVote] < 0) votes[currentVote] = 0;
-                    }
-                    
-                    // Add new vote
-                    votes[voteType] = (votes[voteType] || 0) + 1;
-                    
-                    return votes;
-                });
-                
-                // Set voter's vote
-                voterRef.child('vote').set(voteType);
-            });
+            // Clear inputs
+            sessionCodeInputEl.value = '';
+            participantNameInputEl.value = '';
         }
-        
-        // Enable vote buttons
-        function enableVoteButtons() {
-            voteForButton.disabled = false;
-            voteAgainstButton.disabled = false;
-            voteAbstainButton.disabled = false;
-            
-            voteForButton.style.opacity = 1;
-            voteAgainstButton.style.opacity = 1;
-            voteAbstainButton.style.opacity = 1;
+
+        function generateParticipantId() {
+            return 'p_' + Math.random().toString(36).substring(2, 15);
         }
-        
-        // Disable vote buttons
-        function disableVoteButtons() {
-            voteForButton.disabled = true;
-            voteAgainstButton.disabled = true;
-            voteAbstainButton.disabled = true;
-            
-            voteForButton.style.opacity = 0.5;
-            voteAgainstButton.style.opacity = 0.5;
-            voteAbstainButton.style.opacity = 0.5;
-        }
-        
-        // Initialize
-        checkUrlForSession();
     </script>
 </body>
 </html>
+
