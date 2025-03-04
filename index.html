@@ -7,44 +7,199 @@
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
         body {
-            background-color: #f5f5f5;
+            background-color: #222;
             font-family: Arial, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: flex-start;
+            justify-content: center;
             min-height: 100vh;
             margin: 0;
             padding: 20px;
+            color: white;
         }
 
-        .header {
-            background-color: #1a5276;
+        .pilot-container {
+            background-color: #444;
+            border: 15px solid #8b5a2b;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
+            overflow: hidden;
+        }
+
+        .pilot-header {
+            background-color: #8b5a2b;
             color: white;
-            width: 100%;
             text-align: center;
-            padding: 15px 0;
-            margin-bottom: 20px;
-            border-radius: 5px;
+            padding: 10px 0;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .pilot-body {
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
         }
 
         .login-container, .voting-container {
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            padding: 20px;
-            width: 90%;
-            max-width: 400px;
-            margin-bottom: 20px;
+            width: 100%;
         }
 
         .voting-container {
             display: none;
         }
 
-        h2 {
-            color: #2c3e50;
-            margin-top: 0;
+        .speaker-section {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .speaker {
+            width: 80px;
+            height: 80px;
+            background-color: #333;
+            border-radius: 50%;
+            border: 2px solid #555;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 20px;
+        }
+
+        .speaker-inner {
+            width: 60%;
+            height: 60%;
+            background-color: #222;
+            border-radius: 50%;
+            border: 1px solid #666;
+            position: relative;
+        }
+
+        .speaker-inner::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 30%;
+            height: 30%;
+            background-color: #777;
+            border-radius: 50%;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        .control-buttons {
+            display: flex;
+            margin-bottom: 10px;
+        }
+
+        .control-button {
+            width: 30px;
+            height: 30px;
+            background-color: #333;
+            border-radius: 50%;
+            border: 1px solid #555;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+
+        .control-label {
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        .screen {
+            background-color: #2a4d3e;
+            border: 5px solid #333;
+            padding: 15px;
+            margin: 15px 0;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+        }
+
+        .vote-info {
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .timer {
+            font-size: 20px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .vote-buttons-section {
+            display: flex;
+            flex-direction: column;
+            margin-top: 15px;
+        }
+
+        .vote-buttons-label {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 5px;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+
+        .vote-buttons {
+            display: flex;
+            justify-content: space-between;
+            height: 60px;
+        }
+
+        .vote-button {
+            width: 30%;
+            height: 100%;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            color: black;
+        }
+
+        .vote-for {
+            background-color: #32cd32;
+        }
+
+        .vote-against {
+            background-color: #ff3232;
+        }
+
+        .vote-abstain {
+            background-color: #ffff00;
+        }
+
+        .bottom-controls {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+        }
+
+        .bottom-button {
+            width: 80px;
+            height: 30px;
+            background-color: #333;
+            border: 1px solid #555;
+            border-radius: 5px;
+            color: white;
+            font-size: 12px;
+            cursor: pointer;
         }
 
         .form-group {
@@ -55,24 +210,26 @@
             display: block;
             margin-bottom: 5px;
             font-weight: bold;
-            color: #34495e;
+            color: #ddd;
         }
 
         input {
             width: 100%;
             padding: 10px;
-            border: 1px solid #ddd;
+            background-color: #333;
+            border: 1px solid #555;
             border-radius: 4px;
             font-size: 16px;
             box-sizing: border-box;
+            color: white;
         }
 
         button {
             width: 100%;
             padding: 12px;
-            background-color: #2980b9;
+            background-color: #555;
             color: white;
-            border: none;
+            border: 1px solid #777;
             border-radius: 4px;
             font-size: 16px;
             cursor: pointer;
@@ -80,86 +237,12 @@
         }
 
         button:hover {
-            background-color: #3498db;
+            background-color: #666;
         }
 
         button:disabled {
-            background-color: #95a5a6;
+            background-color: #444;
             cursor: not-allowed;
-        }
-
-        .vote-buttons {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .vote-for {
-            background-color: #27ae60;
-        }
-
-        .vote-for:hover {
-            background-color: #2ecc71;
-        }
-
-        .vote-against {
-            background-color: #c0392b;
-        }
-
-        .vote-against:hover {
-            background-color: #e74c3c;
-        }
-
-        .vote-abstain {
-            background-color: #f39c12;
-        }
-
-        .vote-abstain:hover {
-            background-color: #f1c40f;
-        }
-
-        .status {
-            margin-top: 20px;
-            padding: 10px;
-            border-radius: 4px;
-            text-align: center;
-            font-weight: bold;
-        }
-
-        .status-waiting {
-            background-color: #eaeded;
-            color: #7f8c8d;
-        }
-
-        .status-active {
-            background-color: #d5f5e3;
-            color: #27ae60;
-        }
-
-        .status-voted {
-            background-color: #ebf5fb;
-            color: #2980b9;
-        }
-
-        .status-ended {
-            background-color: #fadbd8;
-            color: #c0392b;
-        }
-
-        .vote-info {
-            margin-top: 15px;
-            padding: 10px;
-            background-color: #f8f9f9;
-            border-radius: 4px;
-        }
-
-        .timer {
-            font-size: 18px;
-            font-weight: bold;
-            text-align: center;
-            margin: 15px 0;
-            color: #e74c3c;
         }
 
         .connection-status {
@@ -171,55 +254,105 @@
         }
 
         .connected {
-            background-color: #d5f5e3;
-            color: #27ae60;
+            background-color: #2a4d3e;
+            color: #32cd32;
         }
 
         .disconnected {
-            background-color: #fadbd8;
-            color: #c0392b;
+            background-color: #4d2a2a;
+            color: #ff3232;
+        }
+
+        .status {
+            margin-top: 10px;
+            padding: 5px;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 14px;
+            background-color: #333;
+            color: #ddd;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>Пульт голосування</h1>
-    </div>
+    <div class="pilot-container">
+        <div class="pilot-header">
+            РАДА
+        </div>
+        <div class="pilot-body">
+            <div class="login-container" id="login-container">
+                <div class="speaker-section">
+                    <div class="speaker">
+                        <div class="speaker-inner"></div>
+                    </div>
+                    <div class="controls">
+                        <div class="control-buttons">
+                            <div class="control-button"></div>
+                            <div class="control-button"></div>
+                            <div class="control-button"></div>
+                            <div class="control-button"></div>
+                        </div>
+                        <div class="control-label">МОВА</div>
+                    </div>
+                </div>
+                
+                <div class="screen">
+                    <div class="vote-info">СИСТЕМА ГОЛОСУВАННЯ</div>
+                    <div class="vote-info">ВЕРХОВНОЇ РАДИ УКРАЇНИ</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="session-code">Код сесії:</label>
+                    <input type="text" id="session-code" placeholder="Введіть код сесії" maxlength="6">
+                </div>
+                <div class="form-group">
+                    <label for="participant-name">Ваше ім'я:</label>
+                    <input type="text" id="participant-name" placeholder="Введіть ваше ім'я">
+                </div>
+                <button id="join-button">РЕЄСТРАЦІЯ</button>
+                <div class="connection-status disconnected" id="connection-status">Не підключено</div>
+            </div>
 
-    <div class="login-container" id="login-container">
-        <h2>Вхід у систему голосування</h2>
-        <div class="form-group">
-            <label for="session-code">Код сесії:</label>
-            <input type="text" id="session-code" placeholder="Введіть код сесії" maxlength="6">
+            <div class="voting-container" id="voting-container">
+                <div class="speaker-section">
+                    <div class="speaker">
+                        <div class="speaker-inner"></div>
+                    </div>
+                    <div class="controls">
+                        <div class="control-buttons">
+                            <div class="control-button"></div>
+                            <div class="control-button"></div>
+                            <div class="control-button"></div>
+                            <div class="control-button"></div>
+                        </div>
+                        <div class="control-label">МОВА</div>
+                    </div>
+                </div>
+                
+                <div class="screen">
+                    <div class="vote-info" id="vote-info">Очікування початку голосування...</div>
+                    <div class="timer" id="timer">00:00</div>
+                </div>
+                
+                <div class="vote-buttons-section">
+                    <div class="vote-buttons-label">ЗА УТРИМАВСЯ ПРОТИ</div>
+                    <div class="vote-buttons">
+                        <button class="vote-button vote-for" id="vote-for-button" disabled>ЗА</button>
+                        <button class="vote-button vote-abstain" id="vote-abstain-button" disabled>УТРИМАВСЯ</button>
+                        <button class="vote-button vote-against" id="vote-against-button" disabled>ПРОТИ</button>
+                    </div>
+                </div>
+                
+                <div class="bottom-controls">
+                    <button class="bottom-button" id="word-button" disabled>СЛОВО</button>
+                    <button class="bottom-button" id="logout-button">ВИМКНУТИ</button>
+                </div>
+                
+                <div class="status" id="vote-status">
+                    Очікування початку голосування
+                </div>
+            </div>
         </div>
-        <div class="form-group">
-            <label for="participant-name">Ваше ім'я:</label>
-            <input type="text" id="participant-name" placeholder="Введіть ваше ім'я">
-        </div>
-        <button id="join-button">Приєднатися до голосування</button>
-        <div class="connection-status disconnected" id="connection-status">Не підключено</div>
-    </div>
-
-    <div class="voting-container" id="voting-container">
-        <h2>Голосування № <span id="vote-number">-</span></h2>
-        
-        <div class="vote-info" id="vote-info">
-            Очікування початку голосування...
-        </div>
-        
-        <div class="timer" id="timer">00:00</div>
-        
-        <div class="vote-buttons">
-            <button class="vote-for" id="vote-for-button" disabled>ЗА</button>
-            <button class="vote-against" id="vote-against-button" disabled>ПРОТИ</button>
-            <button class="vote-abstain" id="vote-abstain-button" disabled>УТРИМАВСЯ</button>
-        </div>
-        
-        <div class="status status-waiting" id="vote-status">
-            Очікування початку голосування
-        </div>
-        
-        <button id="logout-button" style="margin-top: 20px;">Вийти</button>
     </div>
 
     <script>
@@ -240,7 +373,6 @@
         const participantNameInputEl = document.getElementById('participant-name');
         const joinButtonEl = document.getElementById('join-button');
         const connectionStatusEl = document.getElementById('connection-status');
-        const voteNumberEl = document.getElementById('vote-number');
         const voteInfoEl = document.getElementById('vote-info');
         const timerEl = document.getElementById('timer');
         const voteForButtonEl = document.getElementById('vote-for-button');
@@ -248,6 +380,7 @@
         const voteAbstainButtonEl = document.getElementById('vote-abstain-button');
         const voteStatusEl = document.getElementById('vote-status');
         const logoutButtonEl = document.getElementById('logout-button');
+        const wordButtonEl = document.getElementById('word-button');
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
@@ -348,7 +481,6 @@
             
             if (data.type === 'state') {
                 // Update UI with current state
-                voteNumberEl.textContent = data.data.voteNumber || '-';
                 voteInfoEl.textContent = data.data.voteTitle || 'Очікування початку голосування...';
                 
                 if (data.data.active) {
@@ -361,12 +493,10 @@
                     disableVoting();
                     if (data.data.decision) {
                         voteStatusEl.textContent = `Голосування завершено: ${data.data.decision}`;
-                        voteStatusEl.className = 'status status-ended';
                     }
                 }
             } else if (data.type === 'voting-start') {
                 // Update UI for voting start
-                voteNumberEl.textContent = data.data.voteNumber;
                 voteInfoEl.textContent = data.data.voteTitle;
                 remainingTime = data.data.voteTime;
                 
@@ -378,7 +508,6 @@
                 clearInterval(timerInterval);
                 
                 voteStatusEl.textContent = `Голосування завершено: ${data.data.decision}`;
-                voteStatusEl.className = 'status status-ended';
             } else if (data.type === 'timer-update') {
                 // Update timer
                 remainingTime = data.data.remainingTime;
@@ -396,7 +525,6 @@
                 voteAbstainButtonEl.disabled = false;
                 
                 voteStatusEl.textContent = 'Голосування активне - зробіть свій вибір';
-                voteStatusEl.className = 'status status-active';
             }
         }
 
@@ -420,7 +548,6 @@
             disableVoting();
             
             voteStatusEl.textContent = `Ви проголосували: ${getVoteStatusText(voteType)}`;
-            voteStatusEl.className = 'status status-voted';
         }
 
         function getVoteStatusText(voteType) {
