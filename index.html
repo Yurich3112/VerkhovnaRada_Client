@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Пульт голосування - Верховна Рада України</title>
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <style>
         body {
             background-color: #f5f5f5;
@@ -160,6 +161,24 @@
             margin: 15px 0;
             color: #e74c3c;
         }
+
+        .connection-status {
+            margin-top: 10px;
+            padding: 5px;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .connected {
+            background-color: #d5f5e3;
+            color: #27ae60;
+        }
+
+        .disconnected {
+            background-color: #fadbd8;
+            color: #c0392b;
+        }
     </style>
 </head>
 <body>
@@ -178,6 +197,7 @@
             <input type="text" id="participant-name" placeholder="Введіть ваше ім'я">
         </div>
         <button id="join-button">Приєднатися до голосування</button>
+        <div class="connection-status disconnected" id="connection-status">Не підключено</div>
     </div>
 
     <div class="voting-container" id="voting-container">
@@ -202,33 +222,16 @@
         <button id="logout-button" style="margin-top: 20px;">Вийти</button>
     </div>
 
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
     <script>
-        // Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyBXH7JgXl7z8hWaV0xOIFcTt_rXeQF9T8c",
-            authDomain: "rada-voting-system.firebaseapp.com",
-            databaseURL: "https://rada-voting-system-default-rtdb.firebaseio.com",
-            projectId: "rada-voting-system",
-            storageBucket: "rada-voting-system.appspot.com",
-            messagingSenderId: "123456789012",
-            appId: "1:123456789012:web:abcdef1234567890abcdef"
-        };
-
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-
         // Global variables
+        let peer;
+        let connection;
         let sessionCode = '';
-        let participantId = '';
         let participantName = '';
         let timerInterval;
         let remainingTime = 0;
         let hasVoted = false;
+        let isConnected = false;
 
         // DOM elements
         const loginContainerEl = document.getElementById('login-container');
@@ -236,6 +239,7 @@
         const sessionCodeInputEl = document.getElementById('session-code');
         const participantNameInputEl = document.getElementById('participant-name');
         const joinButtonEl = document.getElementById('join-button');
+        const connectionStatusEl = document.getElementById('connection-status');
         const voteNumberEl = document.getElementById('vote-number');
         const voteInfoEl = document.getElementById('vote-info');
         const timerEl = document.getElementById('timer');
@@ -273,122 +277,147 @@
                 return;
             }
             
-            // Check if session exists
-            database.ref(`sessions/${sessionCode}`).once('value', (snapshot) => {
-                const sessionData = snapshot.val();
+            // Initialize PeerJS
+            connectionStatusEl.textContent = 'Підключення...';
+            initPeer();
+        }
+
+        function initPeer() {
+            // Generate a random ID for this participant
+            const participantId = 'voter-' + Math.random().toString(36).substring(2, 15);
+            
+            peer = new Peer(participantId, {
+                debug: 2
+            });
+
+            peer.on('open', (id) => {
+                console.log('My peer ID is: ' + id);
+                // Connect to the main screen
+                connectToHost();
+            });
+
+            peer.on('error', (err) => {
+                console.error('PeerJS error:', err);
+                connectionStatusEl.textContent = `Помилка: ${err.type}`;
+                connectionStatusEl.className = 'connection-status disconnected';
+                isConnected = false;
+            });
+        }
+
+        function connectToHost() {
+            const hostId = `rada-${sessionCode}`;
+            connection = peer.connect(hostId);
+            
+            connection.on('open', () => {
+                console.log('Connected to host');
+                connectionStatusEl.textContent = 'Підключено';
+                connectionStatusEl.className = 'connection-status connected';
+                isConnected = true;
                 
-                if (!sessionData) {
-                    alert('Сесія з таким кодом не знайдена');
-                    return;
-                }
+                // Send join message
+                connection.send({
+                    type: 'join',
+                    name: participantName
+                });
                 
-                // Generate participant ID
-                participantId = generateParticipantId();
+                // Switch to voting view
+                loginContainerEl.style.display = 'none';
+                votingContainerEl.style.display = 'block';
                 
-                // Register participant
-                database.ref(`sessions/${sessionCode}/participants/${participantId}`).set({
-                    name: participantName,
-                    joinTime: firebase.database.ServerValue.TIMESTAMP,
-                    status: 'не голосував'
-                }).then(() => {
-                    // Switch to voting view
-                    loginContainerEl.style.display = 'none';
-                    votingContainerEl.style.display = 'block';
-                    
-                    // Set up session listeners
-                    setupSessionListeners();
-                }).catch((error) => {
-                    alert(`Помилка приєднання до сесії: ${error.message}`);
+                // Set up data handler
+                connection.on('data', handleHostData);
+                
+                // Handle connection close
+                connection.on('close', () => {
+                    console.log('Connection to host closed');
+                    alert('З\'єднання з сервером голосування втрачено');
+                    logout();
                 });
             });
-        }
-
-        function setupSessionListeners() {
-            // Listen for session changes
-            database.ref(`sessions/${sessionCode}`).on('value', (snapshot) => {
-                const sessionData = snapshot.val();
-                
-                if (!sessionData) {
-                    alert('Сесія була закрита');
-                    logout();
-                    return;
-                }
-                
-                updateVotingUI(sessionData);
+            
+            connection.on('error', (err) => {
+                console.error('Connection error:', err);
+                connectionStatusEl.textContent = 'Помилка з\'єднання';
+                connectionStatusEl.className = 'connection-status disconnected';
+                isConnected = false;
             });
         }
 
-        function updateVotingUI(sessionData) {
-            // Update vote number
-            voteNumberEl.textContent = sessionData.voteNumber || '-';
+        function handleHostData(data) {
+            console.log('Received data from host:', data);
             
-            // Update vote info
-            voteInfoEl.textContent = sessionData.voteTitle || 'Очікування початку голосування...';
-            
-            // Check if voting is active
-            if (sessionData.active) {
-                // Enable vote buttons if not voted yet
-                const participantData = sessionData.participants?.[participantId];
-                hasVoted = participantData?.status !== 'не голосував';
+            if (data.type === 'state') {
+                // Update UI with current state
+                voteNumberEl.textContent = data.data.voteNumber || '-';
+                voteInfoEl.textContent = data.data.voteTitle || 'Очікування початку голосування...';
                 
-                voteForButtonEl.disabled = hasVoted;
-                voteAgainstButtonEl.disabled = hasVoted;
-                voteAbstainButtonEl.disabled = hasVoted;
-                
-                // Update status
-                if (hasVoted) {
-                    voteStatusEl.textContent = `Ви проголосували: ${getVoteStatusText(participantData.status)}`;
-                    voteStatusEl.className = 'status status-voted';
+                if (data.data.active) {
+                    enableVoting();
+                    if (data.data.remainingTime > 0) {
+                        remainingTime = data.data.remainingTime;
+                        startTimer();
+                    }
                 } else {
-                    voteStatusEl.textContent = 'Голосування активне - зробіть свій вибір';
-                    voteStatusEl.className = 'status status-active';
+                    disableVoting();
+                    if (data.data.decision) {
+                        voteStatusEl.textContent = `Голосування завершено: ${data.data.decision}`;
+                        voteStatusEl.className = 'status status-ended';
+                    }
                 }
+            } else if (data.type === 'voting-start') {
+                // Update UI for voting start
+                voteNumberEl.textContent = data.data.voteNumber;
+                voteInfoEl.textContent = data.data.voteTitle;
+                remainingTime = data.data.voteTime;
                 
-                // Start timer if not already running
-                if (!timerInterval && sessionData.startTime && sessionData.voteTime) {
-                    const elapsedSeconds = Math.floor((Date.now() - sessionData.startTime) / 1000);
-                    remainingTime = Math.max(0, sessionData.voteTime - elapsedSeconds);
-                    startTimer();
-                }
-            } else {
-                // Disable vote buttons
-                voteForButtonEl.disabled = true;
-                voteAgainstButtonEl.disabled = true;
-                voteAbstainButtonEl.disabled = true;
+                enableVoting();
+                startTimer();
+            } else if (data.type === 'voting-end') {
+                // Update UI for voting end
+                disableVoting();
+                clearInterval(timerInterval);
                 
-                // Stop timer if running
-                if (timerInterval) {
-                    clearInterval(timerInterval);
-                    timerInterval = null;
-                }
-                
-                // Update status
-                if (sessionData.decision) {
-                    voteStatusEl.textContent = `Голосування завершено: ${sessionData.decision}`;
-                    voteStatusEl.className = 'status status-ended';
-                } else {
-                    voteStatusEl.textContent = 'Очікування початку голосування';
-                    voteStatusEl.className = 'status status-waiting';
-                }
+                voteStatusEl.textContent = `Голосування завершено: ${data.data.decision}`;
+                voteStatusEl.className = 'status status-ended';
+            } else if (data.type === 'timer-update') {
+                // Update timer
+                remainingTime = data.data.remainingTime;
+                updateTimerDisplay();
+            } else if (data.type === 'reset') {
+                // Handle reset
+                logout();
             }
         }
 
-                function castVote(voteType) {
-            if (hasVoted) return;
-            
-            // Update participant status
-            database.ref(`sessions/${sessionCode}/participants/${participantId}`).update({
-                status: voteType
-            });
-            
-            // Record vote
-            database.ref(`sessions/${sessionCode}/votes/${participantId}`).set(voteType);
-            
-            // Update UI
-            hasVoted = true;
+        function enableVoting() {
+            if (!hasVoted) {
+                voteForButtonEl.disabled = false;
+                voteAgainstButtonEl.disabled = false;
+                voteAbstainButtonEl.disabled = false;
+                
+                voteStatusEl.textContent = 'Голосування активне - зробіть свій вибір';
+                voteStatusEl.className = 'status status-active';
+            }
+        }
+
+        function disableVoting() {
             voteForButtonEl.disabled = true;
             voteAgainstButtonEl.disabled = true;
             voteAbstainButtonEl.disabled = true;
+        }
+
+        function castVote(voteType) {
+            if (hasVoted || !isConnected) return;
+            
+            // Send vote to host
+            connection.send({
+                type: 'vote',
+                vote: voteType
+            });
+            
+            // Update UI
+            hasVoted = true;
+            disableVoting();
             
             voteStatusEl.textContent = `Ви проголосували: ${getVoteStatusText(voteType)}`;
             voteStatusEl.className = 'status status-voted';
@@ -404,15 +433,15 @@
         }
 
         function startTimer() {
+            clearInterval(timerInterval);
             updateTimerDisplay();
             
             timerInterval = setInterval(() => {
-                remainingTime--;
-                updateTimerDisplay();
-                
-                if (remainingTime <= 0) {
+                if (remainingTime > 0) {
+                    remainingTime--;
+                    updateTimerDisplay();
+                } else {
                     clearInterval(timerInterval);
-                    timerInterval = null;
                 }
             }, 1000);
         }
@@ -424,35 +453,33 @@
         }
 
         function logout() {
-            // Remove participant from session
-            if (sessionCode && participantId) {
-                database.ref(`sessions/${sessionCode}/participants/${participantId}`).remove();
+            // Close connection if open
+            if (connection) {
+                connection.close();
             }
             
-            // Clear session data
-            sessionCode = '';
-            participantId = '';
-            participantName = '';
+            // Destroy peer if exists
+            if (peer) {
+                peer.destroy();
+            }
+            
+            // Reset variables
+            connection = null;
+            peer = null;
+            hasVoted = false;
+            isConnected = false;
             
             // Stop timer if running
-            if (timerInterval) {
-                clearInterval(timerInterval);
-                timerInterval = null;
-            }
+            clearInterval(timerInterval);
             
             // Switch back to login view
             loginContainerEl.style.display = 'block';
             votingContainerEl.style.display = 'none';
             
-            // Clear inputs
-            sessionCodeInputEl.value = '';
-            participantNameInputEl.value = '';
-        }
-
-        function generateParticipantId() {
-            return 'p_' + Math.random().toString(36).substring(2, 15);
+            // Reset connection status
+            connectionStatusEl.textContent = 'Не підключено';
+            connectionStatusEl.className = 'connection-status disconnected';
         }
     </script>
 </body>
 </html>
-
