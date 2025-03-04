@@ -1,612 +1,535 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Пульт голосування - Верховна Рада України</title>
-    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
-    <style>
-        body {
-            background-color: #222;
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-            color: white;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Пульт голосування - Верховна Рада України</title>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <style>
+    body {
+      background-color: #222;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+      color: white;
+    }
 
-        .pilot-container {
-            background-color: #444;
-            border: 15px solid #8b5a2b;
-            border-radius: 10px;
-            width: 90%;
-            max-width: 500px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
-            overflow: hidden;
-        }
+    .pilot-container {
+      background-color: #444;
+      border: 15px solid #8b5a2b;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
+      overflow: hidden;
+    }
 
-        .pilot-header {
-            background-color: #8b5a2b;
-            color: white;
-            text-align: center;
-            padding: 10px 0;
-            font-size: 20px;
-            font-weight: bold;
-        }
+    .pilot-header {
+      background-color: #8b5a2b;
+      color: white;
+      text-align: center;
+      padding: 10px 0;
+      font-size: 20px;
+      font-weight: bold;
+    }
 
-        .pilot-body {
-            display: flex;
-            flex-direction: column;
-            padding: 20px;
-        }
+    .pilot-body {
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+    }
 
-        .login-container, .voting-container {
-            width: 100%;
-        }
+    .login-container, .voting-container {
+      width: 100%;
+    }
 
-        .voting-container {
-            display: none;
-        }
+    .voting-container {
+      display: none;
+    }
 
-        .speaker-section {
-            display: flex;
-            align-items: center;
-            margin-bottom: 20px;
-        }
+    .speaker-section {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+    }
 
-        .speaker {
-            width: 80px;
-            height: 80px;
-            background-color: #333;
-            border-radius: 50%;
-            border: 2px solid #555;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 20px;
-        }
+    .speaker {
+      width: 80px;
+      height: 80px;
+      background-color: #333;
+      border-radius: 50%;
+      border: 2px solid #555;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 20px;
+    }
 
-        .speaker-inner {
-            width: 60%;
-            height: 60%;
-            background-color: #222;
-            border-radius: 50%;
-            border: 1px solid #666;
-            position: relative;
-        }
+    .speaker-inner {
+      width: 60%;
+      height: 60%;
+      background-color: #222;
+      border-radius: 50%;
+      border: 1px solid #666;
+      position: relative;
+    }
 
-        .speaker-inner::after {
-            content: "";
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 30%;
-            height: 30%;
-            background-color: #777;
-            border-radius: 50%;
-        }
+    .speaker-inner::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 30%;
+      height: 30%;
+      background-color: #777;
+      border-radius: 50%;
+    }
 
-        .controls {
-            display: flex;
-            flex-direction: column;
-            flex-grow: 1;
-        }
+    .controls {
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+    }
 
-        .control-buttons {
-            display: flex;
-            margin-bottom: 10px;
-        }
+    .control-buttons {
+      display: flex;
+      margin-bottom: 10px;
+    }
 
-        .control-button {
-            width: 30px;
-            height: 30px;
-            background-color: #333;
-            border-radius: 50%;
-            border: 1px solid #555;
-            margin-right: 10px;
-            cursor: pointer;
-        }
+    .control-button {
+      width: 30px;
+      height: 30px;
+      background-color: #333;
+      border-radius: 50%;
+      border: 1px solid #555;
+      margin-right: 10px;
+      cursor: pointer;
+    }
 
-        .control-label {
-            font-size: 12px;
-            color: #aaa;
-        }
+    .control-label {
+      font-size: 12px;
+      color: #aaa;
+    }
 
-        .screen {
-            background-color: #2a4d3e;
-            border: 5px solid #333;
-            padding: 15px;
-            margin: 15px 0;
-            min-height: 100px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            font-family: 'Courier New', monospace;
-        }
+    .screen {
+      background-color: #2a4d3e;
+      border: 5px solid #333;
+      padding: 15px;
+      margin: 15px 0;
+      min-height: 100px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      font-family: 'Courier New', monospace;
+    }
 
-        .vote-info {
-            font-size: 16px;
-            margin-bottom: 10px;
-        }
+    .vote-info {
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
 
-        .timer {
-            font-size: 20px;
-            font-weight: bold;
-            margin: 10px 0;
-        }
+    .timer {
+      font-size: 20px;
+      font-weight: bold;
+      margin: 10px 0;
+    }
 
-        .vote-buttons-section {
-            display: flex;
-            flex-direction: column;
-            margin-top: 15px;
-        }
+    .vote-buttons-section {
+      display: flex;
+      flex-direction: column;
+      margin-top: 15px;
+    }
 
-        .vote-buttons-label {
-            background-color: #333;
-            color: white;
-            text-align: center;
-            padding: 5px;
-            font-size: 12px;
-            margin-bottom: 5px;
-        }
+    .vote-buttons-label {
+      background-color: #333;
+      color: white;
+      text-align: center;
+      padding: 5px;
+      font-size: 12px;
+      margin-bottom: 5px;
+    }
 
-        .vote-buttons {
-            display: flex;
-            justify-content: space-between;
-            height: 60px;
-        }
+    .vote-buttons {
+      display: flex;
+      justify-content: space-between;
+      height: 60px;
+    }
 
-        .vote-button {
-            width: 30%;
-            height: 100%;
-            border: none;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 14px;
-            color: black;
-        }
+    .vote-button {
+      width: 30%;
+      height: 100%;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 14px;
+      color: black;
+    }
 
-        .vote-for {
-            background-color: #32cd32;
-        }
+    .vote-for {
+      background-color: #32cd32;
+    }
 
-        .vote-against {
-            background-color: #ff3232;
-        }
+    .vote-against {
+      background-color: #ff3232;
+    }
 
-        .vote-abstain {
-            background-color: #ffff00;
-        }
+    .vote-abstain {
+      background-color: #ffff00;
+    }
 
-        .bottom-controls {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 15px;
-        }
+    .bottom-controls {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 15px;
+    }
 
-        .bottom-button {
-            width: 80px;
-            height: 30px;
-            background-color: #333;
-            border: 1px solid #555;
-            border-radius: 5px;
-            color: white;
-            font-size: 12px;
-            cursor: pointer;
-        }
+    .bottom-button {
+      width: 80px;
+      height: 30px;
+      background-color: #333;
+      border: 1px solid #555;
+      border-radius: 5px;
+      color: white;
+      font-size: 12px;
+      cursor: pointer;
+    }
 
-        .form-group {
-            margin-bottom: 15px;
-        }
+    .form-group {
+      margin-bottom: 15px;
+    }
 
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: #ddd;
-        }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+      color: #ddd;
+    }
 
-        input {
-            width: 100%;
-            padding: 10px;
-            background-color: #333;
-            border: 1px solid #555;
-            border-radius: 4px;
-            font-size: 16px;
-            box-sizing: border-box;
-            color: white;
-        }
+    input {
+      width: 100%;
+      padding: 10px;
+      background-color: #333;
+      border: 1px solid #555;
+      border-radius: 4px;
+      font-size: 16px;
+      box-sizing: border-box;
+      color: white;
+    }
 
-        button {
-            width: 100%;
-            padding: 12px;
-            background-color: #555;
-            color: white;
-            border: 1px solid #777;
-            border-radius: 4px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #555;
+      color: white;
+      border: 1px solid #777;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
 
-        button:hover {
-            background-color: #666;
-        }
+    button:hover {
+      background-color: #666;
+    }
 
-        button:disabled {
-            background-color: #444;
-            cursor: not-allowed;
-        }
+    button:disabled {
+      background-color: #444;
+      cursor: not-allowed;
+    }
 
-        .connection-status {
-            margin-top: 10px;
-            padding: 5px;
-            border-radius: 4px;
-            text-align: center;
-            font-size: 14px;
-        }
+    .connection-status {
+      margin-top: 10px;
+      padding: 5px;
+      border-radius: 4px;
+      text-align: center;
+      font-size: 14px;
+    }
 
-        .connected {
-            background-color: #2a4d3e;
-            color: #32cd32;
-        }
+    .connected {
+      background-color: #2a4d3e;
+      color: #32cd32;
+    }
 
-        .disconnected {
-            background-color: #4d2a2a;
-            color: #ff3232;
-        }
+    .disconnected {
+      background-color: #4d2a2a;
+      color: #ff3232;
+    }
 
-        .status {
-            margin-top: 10px;
-            padding: 5px;
-            border-radius: 4px;
-            text-align: center;
-            font-size: 14px;
-            background-color: #333;
-            color: #ddd;
-        }
-    </style>
+    .status {
+      margin-top: 10px;
+      padding: 5px;
+      border-radius: 4px;
+      text-align: center;
+      font-size: 14px;
+      background-color: #333;
+      color: #ddd;
+    }
+  </style>
 </head>
 <body>
-    <div class="pilot-container">
-        <div class="pilot-header">
-            РАДА
-        </div>
-        <div class="pilot-body">
-            <div class="login-container" id="login-container">
-                <div class="speaker-section">
-                    <div class="speaker">
-                        <div class="speaker-inner"></div>
-                    </div>
-                    <div class="controls">
-                        <div class="control-buttons">
-                            <div class="control-button"></div>
-                            <div class="control-button"></div>
-                            <div class="control-button"></div>
-                            <div class="control-button"></div>
-                        </div>
-                        <div class="control-label">МОВА</div>
-                    </div>
-                </div>
-                
-                <div class="screen">
-                    <div class="vote-info">СИСТЕМА ГОЛОСУВАННЯ</div>
-                    <div class="vote-info">ВЕРХОВНОЇ РАДИ УКРАЇНИ</div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="session-code">Код сесії:</label>
-                    <input type="text" id="session-code" placeholder="Введіть код сесії" maxlength="6">
-                </div>
-                <div class="form-group">
-                    <label for="participant-name">Ваше ім'я:</label>
-                    <input type="text" id="participant-name" placeholder="Введіть ваше ім'я">
-                </div>
-                <button id="join-button">РЕЄСТРАЦІЯ</button>
-                <div class="connection-status disconnected" id="connection-status">Не підключено</div>
-            </div>
-
-            <div class="voting-container" id="voting-container">
-                <div class="speaker-section">
-                    <div class="speaker">
-                        <div class="speaker-inner"></div>
-                    </div>
-                    <div class="controls">
-                        <div class="control-buttons">
-                            <div class="control-button"></div>
-                            <div class="control-button"></div>
-                            <div class="control-button"></div>
-                            <div class="control-button"></div>
-                        </div>
-                        <div class="control-label">МОВА</div>
-                    </div>
-                </div>
-                
-                <div class="screen">
-                    <div class="vote-info" id="vote-info">Очікування початку голосування...</div>
-                    <div class="timer" id="timer">00:00</div>
-                </div>
-                
-                <div class="vote-buttons-section">
-                    <div class="vote-buttons-label">ЗА УТРИМАВСЯ ПРОТИ</div>
-                    <div class="vote-buttons">
-                        <button class="vote-button vote-for" id="vote-for-button" disabled>ЗА</button>
-                        <button class="vote-button vote-abstain" id="vote-abstain-button" disabled>УТРИМАВСЯ</button>
-                        <button class="vote-button vote-against" id="vote-against-button" disabled>ПРОТИ</button>
-                    </div>
-                </div>
-                
-                <div class="bottom-controls">
-                    <button class="bottom-button" id="word-button" disabled>СЛОВО</button>
-                    <button class="bottom-button" id="logout-button">ВИМКНУТИ</button>
-                </div>
-                
-                <div class="status" id="vote-status">
-                    Очікування початку голосування
-                </div>
-            </div>
-        </div>
+  <div class="pilot-container">
+    <div class="pilot-header">
+      РАДА
     </div>
+    <div class="pilot-body">
+      <!-- Логін -->
+      <div class="login-container" id="login-container">
+        <div class="speaker-section">
+          <div class="speaker">
+            <div class="speaker-inner"></div>
+          </div>
+          <div class="controls">
+            <div class="control-buttons">
+              <div class="control-button"></div>
+              <div class="control-button"></div>
+              <div class="control-button"></div>
+              <div class="control-button"></div>
+            </div>
+            <div class="control-label">МОВА</div>
+          </div>
+        </div>
+        <div class="screen">
+          <div class="vote-info">СИСТЕМА ГОЛОСУВАННЯ</div>
+          <div class="vote-info">ВЕРХОВНОЇ РАДИ УКРАЇНИ</div>
+        </div>
+        <div class="form-group">
+          <label for="session-code">Код сесії:</label>
+          <input type="text" id="session-code" placeholder="Введіть код сесії" maxlength="6">
+        </div>
+        <div class="form-group">
+          <label for="participant-name">Ваше ім'я:</label>
+          <input type="text" id="participant-name" placeholder="Введіть ваше ім'я">
+        </div>
+        <button id="join-button">РЕЄСТРАЦІЯ</button>
+        <div class="connection-status disconnected" id="connection-status">Не підключено</div>
+      </div>
+      <!-- Голосування -->
+      <div class="voting-container" id="voting-container">
+        <div class="speaker-section">
+          <div class="speaker">
+            <div class="speaker-inner"></div>
+          </div>
+          <div class="controls">
+            <div class="control-buttons">
+              <div class="control-button"></div>
+              <div class="control-button"></div>
+              <div class="control-button"></div>
+              <div class="control-button"></div>
+            </div>
+            <div class="control-label">МОВА</div>
+          </div>
+        </div>
+        <div class="screen">
+          <div class="vote-info" id="vote-info">Очікування початку голосування...</div>
+          <div class="timer" id="timer">00:00</div>
+        </div>
+        <div class="vote-buttons-section">
+          <div class="vote-buttons-label">ЗА УТРИМАВСЯ ПРОТИ</div>
+          <div class="vote-buttons">
+            <button class="vote-button vote-for" id="vote-for-button" disabled>ЗА</button>
+            <button class="vote-button vote-abstain" id="vote-abstain-button" disabled>УТРИМАВСЯ</button>
+            <button class="vote-button vote-against" id="vote-against-button" disabled>ПРОТИ</button>
+          </div>
+        </div>
+        <div class="bottom-controls">
+          <button class="bottom-button" id="word-button" disabled>СЛОВО</button>
+          <button class="bottom-button" id="logout-button">ВИМКНУТИ</button>
+        </div>
+        <div class="status" id="vote-status">Очікування початку голосування</div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // Firebase configuration - замініть на свої дані
+    const firebaseConfig = {
+      apiKey: "AIzaSyCod8K_ZuuAH2HVUrIjrHIuA5X_57zw66U",
+      authDomain: "verkhovna-rada-88452.firebaseapp.com",
+      databaseURL: "https://verkhovna-rada-88452-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "verkhovna-rada-88452",
+      storageBucket: "verkhovna-rada-88452.firebasestorage.app",
+      messagingSenderId: "453354340221",
+      appId: "1:453354340221:web:8e3bf7fb9fae0b72a29614",
+      measurementId: "G-N53NFK10MV"
+    };
 
-    <script>
-        // Global variables
-        let peer;
-        let connection;
-        let sessionCode = '';
-        let participantName = '';
-        let timerInterval;
-        let remainingTime = 0;
-        let hasVoted = false;
-        let isConnected = false;
+    // Ініціалізуємо Firebase
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
 
-        // DOM elements
-        const loginContainerEl = document.getElementById('login-container');
-        const votingContainerEl = document.getElementById('voting-container');
-        const sessionCodeInputEl = document.getElementById('session-code');
-        const participantNameInputEl = document.getElementById('participant-name');
-        const joinButtonEl = document.getElementById('join-button');
-        const connectionStatusEl = document.getElementById('connection-status');
-        const voteInfoEl = document.getElementById('vote-info');
-        const timerEl = document.getElementById('timer');
-        const voteForButtonEl = document.getElementById('vote-for-button');
-        const voteAgainstButtonEl = document.getElementById('vote-against-button');
-        const voteAbstainButtonEl = document.getElementById('vote-abstain-button');
-        const voteStatusEl = document.getElementById('vote-status');
-        const logoutButtonEl = document.getElementById('logout-button');
-        const wordButtonEl = document.getElementById('word-button');
+    // Глобальні змінні
+    let sessionCode = '';
+    let participantId = '';
+    let participantName = '';
+    let voteListener = null;
+    let timerInterval;
+    let remainingTime = 0;
+    let hasVoted = false;  
 
-        // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
-            // Set up button event listeners
-            setupEventListeners();
+    // Отримання DOM елементів
+    const loginContainerEl = document.getElementById('login-container');
+    const votingContainerEl = document.getElementById('voting-container');
+    const sessionCodeInputEl = document.getElementById('session-code');
+    const participantNameInputEl = document.getElementById('participant-name');
+    const joinButtonEl = document.getElementById('join-button');
+    const connectionStatusEl = document.getElementById('connection-status');
+
+    const voteInfoEl = document.getElementById('vote-info');
+    const timerEl = document.getElementById('timer');
+    const voteForButtonEl = document.getElementById('vote-for-button');
+    const voteAgainstButtonEl = document.getElementById('vote-against-button');
+    const voteAbstainButtonEl = document.getElementById('vote-abstain-button');
+    const voteStatusEl = document.getElementById('vote-status');
+    const logoutButtonEl = document.getElementById('logout-button');
+
+    // Налаштування обробників подій
+    joinButtonEl.addEventListener('click', joinSession);
+    voteForButtonEl.addEventListener('click', () => castVote('for'));
+    voteAgainstButtonEl.addEventListener('click', () => castVote('against'));
+    voteAbstainButtonEl.addEventListener('click', () => castVote('abstained'));
+    logoutButtonEl.addEventListener('click', logout);
+
+    function joinSession() {
+      sessionCode = sessionCodeInputEl.value.trim().toUpperCase();
+      participantName = participantNameInputEl.value.trim();
+      
+      if (!sessionCode || !participantName) {
+        alert("Введіть код сесії та ваше ім'я!");
+        return;
+      }
+      
+      // Генеруємо унікальний id для учасника
+      participantId = 'p_' + Math.random().toString(36).substr(2, 10);
+      
+      // Перевіряємо наявність сесії
+      database.ref(`sessions/${sessionCode}`).once('value', (snapshot) => {
+        if (!snapshot.exists()) {
+          alert("Сесія з таким кодом не знайдена!");
+          return;
+        }
+        // Заносимо дані учасника до сесії
+        database.ref(`sessions/${sessionCode}/participants/${participantId}`).set({
+          name: participantName,
+          joinTime: firebase.database.ServerValue.TIMESTAMP,
+          status: 'не голосував'
+        }).then(() => {
+          // Перемикаємо UI у режим голосування
+          loginContainerEl.style.display = 'none';
+          votingContainerEl.style.display = 'block';
+          connectionStatusEl.textContent = 'Підключено';
+          connectionStatusEl.className = 'connection-status connected';
+          subscribeSession();
         });
+      });
+    }
 
-        function setupEventListeners() {
-            // Join button
-            joinButtonEl.addEventListener('click', joinSession);
-            
-            // Vote buttons
-            voteForButtonEl.addEventListener('click', () => castVote('for'));
-            voteAgainstButtonEl.addEventListener('click', () => castVote('against'));
-            voteAbstainButtonEl.addEventListener('click', () => castVote('abstained'));
-            
-            // Logout button
-            logoutButtonEl.addEventListener('click', logout);
+    // Прослуховування змін сесії у Firebase
+    function subscribeSession() {
+      voteListener = database.ref(`sessions/${sessionCode}`);
+      voteListener.on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (!data) { return; }
+        voteInfoEl.textContent = data.voteTitle || 'Очікування початку голосування...';
+
+        // Якщо голосування активне — показуємо таймер та дозволяємо голосувати
+        if (data.active) {
+          if (data.remainingTime !== undefined) {
+            remainingTime = data.remainingTime;
+            startTimer();
+          }
+          enableVoting();
+        } else {
+          disableVoting();
+          if (data.decision)
+            voteStatusEl.textContent = `Голосування завершено: ${data.decision}`;
         }
+      });
+    }
 
-        function joinSession() {
-            sessionCode = sessionCodeInputEl.value.trim().toUpperCase();
-            participantName = participantNameInputEl.value.trim();
-            
-            if (!sessionCode || !participantName) {
-                alert('Будь ласка, введіть код сесії та ваше ім\'я');
-                return;
-            }
-            
-            // Initialize PeerJS
-            connectionStatusEl.textContent = 'Підключення...';
-            initPeer();
+    function enableVoting() {
+      if (!hasVoted) {
+        voteForButtonEl.disabled = false;
+        voteAgainstButtonEl.disabled = false;
+        voteAbstainButtonEl.disabled = false;
+        voteStatusEl.textContent = 'Голосування активне – зробіть свій вибір';
+      }
+    }
+
+    function disableVoting() {
+      voteForButtonEl.disabled = true;
+      voteAgainstButtonEl.disabled = true;
+      voteAbstainButtonEl.disabled = true;
+    }
+
+    function castVote(voteType) {
+      if (hasVoted) return;
+      // Оновлюємо статус учасника у Firebase
+      database.ref(`sessions/${sessionCode}/participants/${participantId}`).update({
+        status: voteType
+      });
+      // Фіксуємо голос (ключ — id учасника)
+      database.ref(`sessions/${sessionCode}/votes/${participantId}`).set(voteType);
+      hasVoted = true;
+      disableVoting();
+      voteStatusEl.textContent = `Ви проголосували: ${getVoteStatusText(voteType)}`;
+    }
+
+    function getVoteStatusText(voteType) {
+      switch(voteType){
+        case 'for': return 'ЗА';
+        case 'against': return 'ПРОТИ';
+        case 'abstained': return 'УТРИМАВСЯ';
+        default: return 'не голосував';
+      }
+    }
+
+    function startTimer() {
+      clearInterval(timerInterval);
+      updateTimerDisplay();
+      timerInterval = setInterval(() => {
+        if (remainingTime > 0) {
+          remainingTime--;
+          updateTimerDisplay();
+          // Оновлюємо час у Firebase
+          database.ref(`sessions/${sessionCode}`).update({ remainingTime: remainingTime });
+        } else {
+          clearInterval(timerInterval);
         }
+      }, 1000);
+    }
 
-        function initPeer() {
-            // Generate a random ID for this participant
-            const participantId = 'voter-' + Math.random().toString(36).substring(2, 15);
-            
-            peer = new Peer(participantId, {
-                debug: 2
-            });
+    function updateTimerDisplay() {
+      const minutes = Math.floor(remainingTime / 60);
+      const seconds = remainingTime % 60;
+      timerEl.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
 
-            peer.on('open', (id) => {
-                console.log('My peer ID is: ' + id);
-                // Connect to the main screen
-                connectToHost();
-            });
-
-            peer.on('error', (err) => {
-                console.error('PeerJS error:', err);
-                connectionStatusEl.textContent = `Помилка: ${err.type}`;
-                connectionStatusEl.className = 'connection-status disconnected';
-                isConnected = false;
-            });
-        }
-
-        function connectToHost() {
-            const hostId = `rada-${sessionCode}`;
-            connection = peer.connect(hostId);
-            
-            connection.on('open', () => {
-                console.log('Connected to host');
-                connectionStatusEl.textContent = 'Підключено';
-                connectionStatusEl.className = 'connection-status connected';
-                isConnected = true;
-                
-                // Send join message
-                connection.send({
-                    type: 'join',
-                    name: participantName
-                });
-                
-                // Switch to voting view
-                loginContainerEl.style.display = 'none';
-                votingContainerEl.style.display = 'block';
-                
-                // Set up data handler
-                connection.on('data', handleHostData);
-                
-                // Handle connection close
-                connection.on('close', () => {
-                    console.log('Connection to host closed');
-                    alert('З\'єднання з сервером голосування втрачено');
-                    logout();
-                });
-            });
-            
-            connection.on('error', (err) => {
-                console.error('Connection error:', err);
-                connectionStatusEl.textContent = 'Помилка з\'єднання';
-                connectionStatusEl.className = 'connection-status disconnected';
-                isConnected = false;
-            });
-        }
-
-        function handleHostData(data) {
-            console.log('Received data from host:', data);
-            
-            if (data.type === 'state') {
-                // Update UI with current state
-                voteInfoEl.textContent = data.data.voteTitle || 'Очікування початку голосування...';
-                
-                if (data.data.active) {
-                    enableVoting();
-                    if (data.data.remainingTime > 0) {
-                        remainingTime = data.data.remainingTime;
-                        startTimer();
-                    }
-                } else {
-                    disableVoting();
-                    if (data.data.decision) {
-                        voteStatusEl.textContent = `Голосування завершено: ${data.data.decision}`;
-                    }
-                }
-            } else if (data.type === 'voting-start') {
-                // Update UI for voting start
-                voteInfoEl.textContent = data.data.voteTitle;
-                remainingTime = data.data.voteTime;
-                
-                enableVoting();
-                startTimer();
-            } else if (data.type === 'voting-end') {
-                // Update UI for voting end
-                disableVoting();
-                clearInterval(timerInterval);
-                
-                voteStatusEl.textContent = `Голосування завершено: ${data.data.decision}`;
-            } else if (data.type === 'timer-update') {
-                // Update timer
-                remainingTime = data.data.remainingTime;
-                updateTimerDisplay();
-            } else if (data.type === 'reset') {
-                // Handle reset
-                logout();
-            }
-        }
-
-        function enableVoting() {
-            if (!hasVoted) {
-                voteForButtonEl.disabled = false;
-                voteAgainstButtonEl.disabled = false;
-                voteAbstainButtonEl.disabled = false;
-                
-                voteStatusEl.textContent = 'Голосування активне - зробіть свій вибір';
-            }
-        }
-
-        function disableVoting() {
-            voteForButtonEl.disabled = true;
-            voteAgainstButtonEl.disabled = true;
-            voteAbstainButtonEl.disabled = true;
-        }
-
-        function castVote(voteType) {
-            if (hasVoted || !isConnected) return;
-            
-            // Send vote to host
-            connection.send({
-                type: 'vote',
-                vote: voteType
-            });
-            
-            // Update UI
-            hasVoted = true;
-            disableVoting();
-            
-            voteStatusEl.textContent = `Ви проголосували: ${getVoteStatusText(voteType)}`;
-        }
-
-        function getVoteStatusText(voteType) {
-            switch(voteType) {
-                case 'for': return 'ЗА';
-                case 'against': return 'ПРОТИ';
-                case 'abstained': return 'УТРИМАВСЯ';
-                default: return 'не голосував';
-            }
-        }
-
-        function startTimer() {
-            clearInterval(timerInterval);
-            updateTimerDisplay();
-            
-            timerInterval = setInterval(() => {
-                if (remainingTime > 0) {
-                    remainingTime--;
-                    updateTimerDisplay();
-                } else {
-                    clearInterval(timerInterval);
-                }
-            }, 1000);
-        }
-
-        function updateTimerDisplay() {
-            const minutes = Math.floor(remainingTime / 60);
-            const seconds = remainingTime % 60;
-            timerEl.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-        }
-
-        function logout() {
-            // Close connection if open
-            if (connection) {
-                connection.close();
-            }
-            
-            // Destroy peer if exists
-            if (peer) {
-                peer.destroy();
-            }
-            
-            // Reset variables
-            connection = null;
-            peer = null;
-            hasVoted = false;
-            isConnected = false;
-            
-            // Stop timer if running
-            clearInterval(timerInterval);
-            
-            // Switch back to login view
-            loginContainerEl.style.display = 'block';
-            votingContainerEl.style.display = 'none';
-            
-            // Reset connection status
-            connectionStatusEl.textContent = 'Не підключено';
-            connectionStatusEl.className = 'connection-status disconnected';
-        }
-    </script>
+    function logout() {
+      // Видаляємо дані учасника зі сесії
+      database.ref(`sessions/${sessionCode}/participants/${participantId}`).remove();
+      // Відписуємось від змін
+      if (voteListener) voteListener.off();
+      // Скидаємо змінні та UI
+      hasVoted = false;
+      sessionCode = '';
+      participantId = '';
+      participantName = '';
+      clearInterval(timerInterval);
+      loginContainerEl.style.display = 'block';
+      votingContainerEl.style.display = 'none';
+      connectionStatusEl.textContent = 'Не підключено';
+      connectionStatusEl.className = 'connection-status disconnected';
+    }
+  </script>
 </body>
 </html>
