@@ -351,7 +351,7 @@
   </div>
   
   <script>
-    // Firebase configuration - замініть на свої дані
+    // Firebase configuration – замініть на свої дані
     const firebaseConfig = {
       apiKey: "AIzaSyCod8K_ZuuAH2HVUrIjrHIuA5X_57zw66U",
       authDomain: "verkhovna-rada-88452.firebaseapp.com",
@@ -363,7 +363,7 @@
       measurementId: "G-N53NFK10MV"
     };
 
-    // Ініціалізуємо Firebase
+    // Ініціалізація Firebase
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
@@ -423,7 +423,7 @@
           joinTime: firebase.database.ServerValue.TIMESTAMP,
           status: 'не голосував'
         }).then(() => {
-          // Перемикаємо UI у режим голосування
+          // Перемикаємо інтерфейс у режим голосування
           loginContainerEl.style.display = 'none';
           votingContainerEl.style.display = 'block';
           connectionStatusEl.textContent = 'Підключено';
@@ -449,9 +449,14 @@
           }
           enableVoting();
         } else {
+          // Якщо голосування завершене – очищаємо таймер та негайно показуємо 00:00
           disableVoting();
+          clearInterval(timerInterval);
+          timerEl.textContent = "00:00";
           if (data.decision)
             voteStatusEl.textContent = `Голосування завершено: ${data.decision}`;
+          else
+            voteStatusEl.textContent = "Голосування завершено";
         }
       });
     }
