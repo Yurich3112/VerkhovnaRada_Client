@@ -441,13 +441,24 @@
         if (!data) { return; }
         voteInfoEl.textContent = data.voteTitle || 'Очікування початку голосування...';
 
-        // Якщо голосування активне — показуємо таймер та дозволяємо голосувати
+        // Якщо голосування активне — показуємо таймер,
+        // а також перевіряємо статус свого запису та, якщо він "не голосував", дозволяємо голосувати.
         if (data.active) {
           if (data.remainingTime !== undefined) {
             remainingTime = data.remainingTime;
             startTimer();
           }
-          enableVoting();
+          // Перевіряємо стан власного запису
+          database.ref(`sessions/${sessionCode}/participants/${participantId}`).once('value')
+          .then(snapshot => {
+            const pData = snapshot.val();
+            if (pData && pData.status === 'не голосував') {
+              hasVoted = false;
+              enableVoting();
+            } else {
+              disableVoting();
+            }
+          });
         } else {
           // Якщо голосування завершене – очищаємо таймер та негайно показуємо 00:00
           disableVoting();
